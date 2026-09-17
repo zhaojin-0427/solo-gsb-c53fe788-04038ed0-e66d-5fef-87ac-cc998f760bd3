@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>样本链路与隔离处置台</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🧪 样本链路与隔离处置台</div>
+    <div id="user-box" class="user-box hidden">
+      <span id="user-label"></span>
+      <button id="btn-logout" class="btn btn-ghost" type="button">退出登录</button>
+    </div>
+  </header>
+
+  <!-- 登录 -->
+  <div id="login-view" class="login-wrap hidden">
+    <form id="login-form" class="card login-card">
+      <h2>工作人员登录</h2>
+      <label>账号
+        <input id="login-username" autocomplete="username" required>
+      </label>
+      <label>密码
+        <input id="login-password" type="password" autocomplete="current-password" required>
+      </label>
+      <button class="btn btn-primary" type="submit">登录</button>
+      <p class="hint">默认账号：alice / bob（员工，可登记与交接），carol（授权主管，可解除隔离）。密码见 README。</p>
+    </form>
+  </div>
+
+  <!-- 主界面 -->
+  <div id="app-view" class="hidden">
+    <nav class="tabs">
+      <button class="tab active" data-tab="batches" type="button">批次与样本</button>
+      <button class="tab" data-tab="handover" type="button">交接扫描</button>
+      <button class="tab" data-tab="temperature" type="button">温度导入</button>
+      <button class="tab" data-tab="events" type="button">异常处置 <span id="events-badge" class="badge hidden"></span></button>
+      <button class="tab" data-tab="timeline" type="button">保管时间线</button>
+      <button class="tab" data-tab="audit" type="button">审计日志</button>
+    </nav>
+
+    <main>
+      <!-- 批次与样本 -->
+      <section id="tab-batches" class="tab-panel">
+        <div class="grid-2">
+          <div class="card">
+            <h3>新建批次</h3>
+            <form id="batch-form">
+              <label>批次编码 <input id="batch-code" required placeholder="如 BATCH-2026-001"></label>
+              <label>批次名称 <input id="batch-name" required placeholder="如 血清样本第 1 批"></label>
+              <div class="row-2">
+                <label>温度下限 ℃ <input id="batch-tmin" type="number" step="0.1" required value="2"></label>
+                <label>温度上限 ℃ <input id="batch-tmax" type="number" step="0.1" required value="8"></label>
+              </div>
+              <label>备注 <input id="batch-desc" placeholder="可选"></label>
+              <button class="btn btn-primary" type="submit">创建批次</button>
+            </form>
+          </div>
+          <div class="card">
+            <h3>登记样本条码</h3>
+            <form id="samples-form">
+              <label>所属批次 <select id="samples-batch-select" required></select></label>
+              <label>条码（每行一个）
+                <textarea id="samples-barcodes" rows="5" required placeholder="SC-0001&#10;SC-0002"></textarea>
+              </label>
+              <button class="btn btn-primary" type="submit">登记条码</button>
+            </form>
+            <div id="samples-result" class="result"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>批次列表</h3>
+          <div class="table-wrap"><table id="batches-table"></table></div>
+        </div>
+        <div class="card hidden" id="batch-samples-card">
+          <h3 id="batch-samples-title">批次样本</h3>
+          <div class="table-wrap"><table id="batch-samples-table"></table></div>
+        </div>
+      </section>
+
+      <!-- 交接扫描 -->
+      <section id="tab-handover" class="tab-panel hidden">
+        <div class="card">
+          <h3>交接扫描</h3>
+          <div class="scan-row">
+            <input id="ho-barcode" placeholder="扫描或输入样本条码后回车">
+            <button id="ho-lookup" class="btn" type="button">查询当前持有人</button>
+          </div>
+          <div id="ho-state" class="result"></div>
+          <form id="ho-form" class="hidden">
+            <div class="row-2">
+              <label>前一持有人（系统校验）<input id="ho-from" readonly></label>
+              <label>接收人 <input id="ho-to" required placeholder="接收人姓名/工号"></label>
+            </div>
+            <div class="row-2">
+              <label>交接地点 <input id="ho-location" required placeholder="如 冷库A / 检验科"></label>
+              <label>扫描时间 <input id="ho-time" type="datetime-local"></label>
+            </div>
+            <button class="btn btn-primary" type="submit">提交交接</button>
+            <p class="hint">同一表单重复提交（网络重试/双击）使用同一幂等键，不会产生双重链路。</p>
+          </form>
+          <div id="ho-result" class="result"></div>
+        </div>
+        <div class="card">
+          <h3>最近交接</h3>
+          <div class="table-wrap"><table id="ho-recent"></table></div>
+        </div>
+      </section>
+
+      <!-- 温度导入 -->
+      <section id="tab-temperature" class="tab-panel hidden">
+        <div class="card">
+          <h3>导入温度记录</h3>
+          <form id="temp-form">
+            <label>所属批次 <select id="temp-batch-select" required></select></label>
+            <label>CSV 文件（可选）<input id="temp-file" type="file" accept=".csv,.txt"></label>
+            <label>温度记录（每行：条码,温度,记录时间；条码与时间可留空）
+              <textarea id="temp-csv" rows="6" placeholder="SC-0001,5.2,2026-09-17T08:30:00Z&#10;SC-0002,9.8,2026-09-17T08:35:00Z&#10;,4.1,"></textarea>
+            </label>
+            <button class="btn btn-primary" type="submit">导入</button>
+          </form>
+          <p class="hint">同一记录重复导入会被幂等跳过；超出批次阈值的记录自动生成超限事件并冻结该批次后续交接。</p>
+          <div id="temp-result" class="result"></div>
+        </div>
+        <div class="card">
+          <h3>最近温度记录</h3>
+          <div class="table-wrap"><table id="temp-table"></table></div>
+        </div>
+      </section>
+
+      <!-- 异常处置 -->
+      <section id="tab-events" class="tab-panel hidden">
+        <div class="card">
+          <h3>待处置异常</h3>
+          <div class="table-wrap"><table id="events-open-table"></table></div>
+        </div>
+        <div class="card">
+          <h3>处置记录</h3>
+          <div class="table-wrap"><table id="events-history-table"></table></div>
+        </div>
+      </section>
+
+      <!-- 保管时间线 -->
+      <section id="tab-timeline" class="tab-panel hidden">
+        <div class="card">
+          <h3>保管时间线</h3>
+          <div class="scan-row">
+            <input id="tl-barcode" placeholder="输入样本条码">
+            <button id="tl-lookup" class="btn" type="button">查询</button>
+            <button id="tl-verify" class="btn hidden" type="button">验证链路完整性</button>
+          </div>
+          <div id="tl-summary" class="result"></div>
+          <div id="tl-verify-result" class="result"></div>
+          <div id="tl-chain"></div>
+          <h4 id="tl-events-title" class="hidden">批次相关事件</h4>
+          <div class="table-wrap"><table id="tl-events" class="hidden"></table></div>
+        </div>
+      </section>
+
+      <!-- 审计日志 -->
+      <section id="tab-audit" class="tab-panel hidden">
+        <div class="card">
+          <h3>审计日志</h3>
+          <div class="btn-row">
+            <button id="audit-refresh" class="btn" type="button">刷新</button>
+            <button id="audit-verify" class="btn" type="button">验证审计链</button>
+            <button id="audit-export-csv" class="btn" type="button">导出 CSV</button>
+            <button id="audit-export-json" class="btn" type="button">导出 JSON</button>
+          </div>
+          <div id="audit-verify-result" class="result"></div>
+          <div class="table-wrap"><table id="audit-table"></table></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 理由输入弹窗 -->
+  <div id="modal" class="modal-backdrop hidden">
+    <div class="card modal-card">
+      <h3 id="modal-title"></h3>
+      <label>理由（必填，将写入审计）
+        <textarea id="modal-reason" rows="3" placeholder="请填写处置理由"></textarea>
+      </label>
+      <div class="btn-row">
+        <button id="modal-ok" class="btn btn-primary" type="button">确认提交</button>
+        <button id="modal-cancel" class="btn" type="button">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

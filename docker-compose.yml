@@ -1,0 +1,20 @@
+services:
+  app:
+    build: .
+    container_name: sample-custody
+    ports:
+      - "8000:8000"
+    environment:
+      # 生产环境务必修改：令牌签名密钥
+      APP_SECRET: ${APP_SECRET:-dev-only-secret-change-me}
+      # 账号配置（JSON，留空则使用内置默认账号 alice/bob/carol）：
+      #   APP_USERS='{"op1":{"password":"s3cret","role":"staff"},"qa":{"password":"s3cret2","role":"supervisor"}}'
+      APP_USERS: ${APP_USERS:-}
+      APP_TOKEN_TTL_MINUTES: ${APP_TOKEN_TTL_MINUTES:-720}
+      APP_DB_PATH: /data/app.db
+    volumes:
+      - app_data:/data
+    restart: unless-stopped
+
+volumes:
+  app_data:
