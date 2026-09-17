@@ -1,0 +1,22 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: sample-custody-console:latest
+    container_name: sample-custody-console
+    ports:
+      - "8000:8000"
+    environment:
+      # SQLite 数据库文件（挂载卷持久化，重启后状态/冲突/审计保持一致）
+      DB_PATH: /data/app.db
+      # 会话有效期（小时）
+      SESSION_TTL_HOURS: "12"
+      # 首次启动写入演示数据（批次 DEMO-2026-001），置 "false" 关闭
+      SEED_DEMO_DATA: "true"
+    volumes:
+      - custody_data:/data
+    restart: unless-stopped
+
+volumes:
+  custody_data:

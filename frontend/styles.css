@@ -1,0 +1,145 @@
+:root {
+  --bg: #0f1420;
+  --card: #1a2233;
+  --border: #2a3550;
+  --text: #e6ebf5;
+  --muted: #8b96ad;
+  --accent: #4f8cff;
+  --ok: #2fbf71;
+  --warn: #f0a13c;
+  --bad: #e5534b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 { font-size: 18px; margin: 0; }
+
+#user-box { display: flex; align-items: center; gap: 10px; }
+#user-info { color: var(--muted); font-size: 14px; }
+
+nav#tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px 0;
+  flex-wrap: wrap;
+}
+
+.tab {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  color: var(--muted);
+  padding: 8px 16px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tab.active { background: var(--card); color: var(--text); }
+
+main { padding: 16px 24px 48px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.card.narrow { max-width: 380px; margin: 48px auto; }
+.card h2 { margin: 0 0 12px; font-size: 16px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+label { display: block; margin: 8px 0; font-size: 13px; color: var(--muted); }
+label.inline { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
+
+input, select, textarea {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: #121829;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+input[readonly] { color: var(--muted); }
+textarea { resize: vertical; font-family: ui-monospace, monospace; }
+
+.row { display: flex; gap: 10px; align-items: center; }
+.row > * { flex: 1; }
+.row.spread { justify-content: space-between; }
+.row.spread > * { flex: none; }
+
+.btn {
+  background: #232f4a;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 8px;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.small { padding: 4px 10px; font-size: 13px; margin-top: 0; }
+.btn.danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+.hidden { display: none !important; }
+.hint { color: var(--muted); font-size: 12px; }
+.error { color: var(--bad); }
+.ok { color: var(--ok); }
+.warn { color: var(--warn); }
+.mono { font-family: ui-monospace, monospace; font-size: 12px; }
+
+.badge {
+  display: inline-block;
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: var(--bad);
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+}
+
+.tag { display: inline-block; padding: 1px 8px; border-radius: 8px; font-size: 12px; }
+.tag.ok { background: rgba(47, 191, 113, .15); color: var(--ok); }
+.tag.frozen { background: rgba(229, 83, 75, .15); color: var(--bad); }
+.tag.open { background: rgba(240, 161, 60, .15); color: var(--warn); }
+.tag.done { background: rgba(139, 150, 173, .15); color: var(--muted); }
+
+.result-box { margin-top: 10px; padding: 10px 12px; border-radius: 6px; font-size: 13px; }
+.result-box.ok { background: rgba(47, 191, 113, .12); border: 1px solid var(--ok); }
+.result-box.err { background: rgba(229, 83, 75, .12); border: 1px solid var(--bad); }
+.result-box.info { background: rgba(79, 140, 255, .12); border: 1px solid var(--accent); }
+
+.disp-controls { display: flex; gap: 6px; }
+.disp-controls input { flex: 1; min-width: 140px; margin-top: 0; }
+.disp-controls .btn { margin-top: 0; padding: 6px 10px; font-size: 12px; white-space: nowrap; }

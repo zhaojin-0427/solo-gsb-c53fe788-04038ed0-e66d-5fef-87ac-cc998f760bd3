@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>样本链路与隔离处置台</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <h1>样本链路与隔离处置台</h1>
+    <div id="user-box">
+      <span id="user-info"></span>
+      <button id="btn-logout" class="btn small hidden">退出登录</button>
+    </div>
+  </header>
+
+  <!-- 登录 -->
+  <section id="login-view" class="card narrow hidden">
+    <h2>登录</h2>
+    <label>用户名<input id="login-username" autocomplete="username"></label>
+    <label>密码<input id="login-password" type="password" autocomplete="current-password"></label>
+    <button id="btn-login" class="btn primary">登录</button>
+    <p id="login-error" class="error"></p>
+    <p class="hint">内置账号：staff1 / staff123（员工）· lead1 / lead123（授权人员）· admin / admin123（管理员）</p>
+  </section>
+
+  <nav id="tabs" class="hidden">
+    <button class="tab active" data-tab="register">批次与样本</button>
+    <button class="tab" data-tab="transfer">交接扫描</button>
+    <button class="tab" data-tab="temps">温度导入</button>
+    <button class="tab" data-tab="exceptions">异常处置 <span id="exc-badge" class="badge hidden"></span></button>
+    <button class="tab" data-tab="timeline">保管时间线</button>
+    <button class="tab" data-tab="audit">审计</button>
+  </nav>
+
+  <main id="main" class="hidden">
+
+    <!-- 批次与样本登记 -->
+    <section id="view-register" class="view">
+      <div class="grid-2">
+        <div class="card">
+          <h2>新建批次</h2>
+          <label>批次号<input id="batch-code" placeholder="如 BATCH-2026-001"></label>
+          <label>名称<input id="batch-name" placeholder="如 血清样本（2~8°C 冷链）"></label>
+          <div class="row">
+            <label>温度下限 °C<input id="batch-tmin" type="number" step="0.1" value="2"></label>
+            <label>温度上限 °C<input id="batch-tmax" type="number" step="0.1" value="8"></label>
+          </div>
+          <button id="btn-create-batch" class="btn primary">创建批次</button>
+          <p id="batch-result"></p>
+        </div>
+        <div class="card">
+          <h2>登记样本条码</h2>
+          <label>所属批次<select id="sample-batch"></select></label>
+          <label>条码（每行一个）<textarea id="sample-barcodes" rows="5" placeholder="SMP-0001&#10;SMP-0002"></textarea></label>
+          <div class="row">
+            <label>初始持有人<input id="sample-holder" placeholder="姓名"></label>
+            <label>地点<input id="sample-location" placeholder="如 样本接收室"></label>
+          </div>
+          <button id="btn-register-samples" class="btn primary">登记</button>
+          <p id="sample-result"></p>
+        </div>
+      </div>
+      <div class="card">
+        <h2>批次列表</h2>
+        <table id="batch-table">
+          <thead><tr><th>批次号</th><th>名称</th><th>温度阈值</th><th>样本数</th><th>未处置超限</th><th>创建人</th><th>创建时间</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 交接扫描 -->
+    <section id="view-transfer" class="view hidden">
+      <div class="card">
+        <h2>扫描 / 输入条码</h2>
+        <div class="row">
+          <input id="scan-barcode" placeholder="样本条码，回车查询" autofocus>
+          <button id="btn-scan" class="btn">查询</button>
+        </div>
+      </div>
+      <div id="transfer-panel" class="card hidden">
+        <h2>交接登记</h2>
+        <div id="sample-info"></div>
+        <div class="grid-2">
+          <label>前一持有人（系统自动带出，可校验修改）<input id="transfer-from"></label>
+          <label>新持有人<input id="transfer-to" placeholder="接收人姓名"></label>
+        </div>
+        <div class="grid-2">
+          <label>地点<input id="transfer-location" placeholder="如 冷藏库 A-01"></label>
+          <label>幂等键（每次交接唯一，重试不变）<input id="transfer-key" readonly></label>
+        </div>
+        <div class="row">
+          <button id="btn-transfer" class="btn primary">提交交接</button>
+          <button id="btn-transfer-retry" class="btn">重试（同一幂等键）</button>
+        </div>
+        <div id="transfer-result"></div>
+      </div>
+    </section>
+
+    <!-- 温度导入 -->
+    <section id="view-temps" class="view hidden">
+      <div class="card">
+        <h2>导入温度区间</h2>
+        <label>批次<select id="temp-batch"></select></label>
+        <label>CSV 数据（每行：记录时间,温度[,条码]；首行可为表头）
+          <textarea id="temp-csv" rows="8" placeholder="recorded_at,temperature,barcode&#10;2026-09-17T08:00:00Z,4.2,SMP-0001&#10;2026-09-17T12:00:00Z,9.6,SMP-0002"></textarea>
+        </label>
+        <div class="row">
+          <input type="file" id="temp-file" accept=".csv,.txt">
+          <button id="btn-import-temps" class="btn primary">导入</button>
+        </div>
+        <div id="temp-result"></div>
+      </div>
+    </section>
+
+    <!-- 异常处置 -->
+    <section id="view-exceptions" class="view hidden">
+      <div class="card">
+        <div class="row spread">
+          <h2>超限事件</h2>
+          <label class="inline"><input type="checkbox" id="exc-show-all"> 显示已处置</label>
+        </div>
+        <table id="exc-table">
+          <thead><tr><th>ID</th><th>批次</th><th>条码</th><th>温度</th><th>阈值</th><th>记录时间</th><th>状态</th><th>处置（授权人员）</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h2>交接冲突</h2>
+        <table id="conflict-table">
+          <thead><tr><th>ID</th><th>条码</th><th>类型</th><th>期望/实际持有人</th><th>目标人</th><th>地点</th><th>操作人</th><th>时间</th><th>状态</th><th>处理</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 保管时间线 -->
+    <section id="view-timeline" class="view hidden">
+      <div class="card">
+        <h2>可验证保管时间线</h2>
+        <div class="row">
+          <input id="timeline-barcode" placeholder="样本条码，回车查询">
+          <button id="btn-timeline" class="btn">查询</button>
+          <button id="btn-verify" class="btn hidden">验证链完整性</button>
+        </div>
+        <p id="verify-result"></p>
+        <div id="timeline-info"></div>
+        <table id="timeline-table" class="hidden">
+          <thead><tr><th>#</th><th>从</th><th>到</th><th>地点</th><th>扫描时间</th><th>操作人</th><th>哈希</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 审计 -->
+    <section id="view-audit" class="view hidden">
+      <div class="card">
+        <div class="row spread">
+          <h2>审计日志</h2>
+          <div class="row">
+            <input id="audit-action" placeholder="按动作过滤，如 transfer.created">
+            <button id="btn-audit-refresh" class="btn">刷新</button>
+            <button id="btn-audit-verify" class="btn">验证审计链</button>
+            <button id="btn-audit-csv" class="btn">导出 CSV</button>
+            <button id="btn-audit-json" class="btn">导出 JSON</button>
+          </div>
+        </div>
+        <p id="audit-verify-result"></p>
+        <table id="audit-table">
+          <thead><tr><th>ID</th><th>时间</th><th>操作人</th><th>动作</th><th>对象</th><th>详情</th><th>哈希</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
